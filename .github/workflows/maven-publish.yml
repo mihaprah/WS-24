@@ -35,3 +35,39 @@ jobs:
       with:
         name: Package
         path: backend/demo/target
+  BE-docker-image-delivery:
+    name: BE Docker Image Delivery
+    runs-on: ubuntu-latest
+    needs: Build_backend
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v4
+        with:
+          name: Package
+          path: backend/demo/target/
+      
+      - name: Generate image tag
+        id: date
+        run: echo "::set-output name=date::$(date +%Y%m%d-%H%M%S)"
+
+      - name: Docker build
+        run: docker build -t mihaprah/backend:$TAG_NAME -f backend/demo/src/main/docker/Dockerfile.jvm ./backend/demo
+        env:
+          TAG_NAME: CD-${{ steps.date.outputs.date}}
+
+      - name: Retag to latest
+        run: docker tag mihaprah/backend:$TAG_NAME mihaprah/backend:latest
+        env:
+          TAG_NAME: CD-&{{ steps.date.outputs.date }}
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_PASS }}
+
+      - name: Docker push
+        run: docker push mihaprah/backend:$TAG_NAME && docker push mihaprah/backend:latest
+        env:
+          TAG_NAME: CD-${{ steps.date.outputs.date }}
