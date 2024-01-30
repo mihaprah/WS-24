@@ -59,7 +59,7 @@ jobs:
       - name: Retag to latest
         run: docker tag mihaprah/backend:$TAG_NAME mihaprah/backend:latest
         env:
-          TAG_NAME: CD-&{{ steps.date.outputs.date }}
+          TAG_NAME: CD-${{ steps.date.outputs.date }}
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
